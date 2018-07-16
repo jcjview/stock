@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
 from datetime import datetime,date
 import time
-
+import tushare as ts
 from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, MONDAY, YEARLY, date2num
 from matplotlib.finance import quotes_historical_yahoo_ohlc, candlestick_ohlc,candlestick2_ochl
 
@@ -24,35 +24,19 @@ def cut_date(quotes, date1, date2):
         if date1<q[0]<date2:
             ret.append(q)
     return ret
-def main(path):
-    r = open(path)
-    count = -1
-    quotes=[]
-    for line in r:
-        try:
-            count += 1
-            if count == 0:
-                line = line.replace(" ", "\t").strip()
-                lines = line.split("\t")
-                lines1 = lines
-                code = lines1[0]
-                name = lines1[1]
-                print (code, name)
-            elif count == 1:
-                continue
-            else:
-                line = line.strip()
-                lines = line.split(";")  # 日期	    开盘	    最高	    最低	    收盘	    成交量	    成交额
-                d= datetime.strptime(lines[0],'%Y/%m/%d').date()
-                dates=date2num(d)
-                opens=float(lines[1])
-                highs=float(lines[2])
-                lows=float(lines[3])
-                closes=float(lines[4])
-                volume=float(lines[5])
-                quotes.append((dates,opens,highs,lows,closes,volume))#Date,Open,High,Low,Close,Volume
-        except ValueError as e:
-            pass
+def main(stock):
+    hist_data = ts.get_hist_data(stock)
+    quotes = []
+    print(hist_data.head())
+    for dates, row in hist_data.iterrows():
+        # 将时间转换为数字
+        date_time = datetime.strptime(dates, '%Y-%m-%d')
+        t = date2num(date_time)
+        # open, high, low, close,volume = row[:5]
+        # datas = (t, open, high, low, close,volume)
+        quotes.append((t, row['open'], row['high'], row['low'], row['close'], row['volume']))  # Date,Open,High,Low,Close,Volume
+
+        # quotes.append(datas)
     date1 = date2num(date(2015, 10, 1)) # 起始日期，格式：(年，月，日)元组
     date2 = date2num(date(2015, 12, 10))  # 结束日期，格式：(年，月，日)元组
     quotes = cut_date(quotes, date1, date2)#Date,Open,High,Low,Close,Volume,Adj Close
@@ -73,16 +57,11 @@ def main(path):
     ax.plot_date(dates, ma5, 'r-')
     ax.plot_date(dates, ma30, '-')
     candlestick_ohlc(ax, quotes, width=0.6, colorup='r', colordown='g')
-    # candlestick2_ochl(ax, opens,closes,highs,lows,width=0.6, colorup='r', colordown='g')
-    # ax.xaxis_date()
-    # ax.autoscale_view()
-    # plt.setp(plt.gca().get_xticklabels(), rotation=45, horizontalalignment='right')
-
     ax.grid(True)
-    plt.title(path)
+    plt.title(stock)
     plt.show()
     return
 
 
 if __name__ == '__main__':
-    main("../data/enter/SZ#300044.txt")
+    main("300044")
