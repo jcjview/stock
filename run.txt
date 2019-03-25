@@ -1,0 +1,1 @@
+https://conda.anaconda.org/quantopian/linux-64/ta-lib-0.4.9-np111py27_0.tar.bz2
